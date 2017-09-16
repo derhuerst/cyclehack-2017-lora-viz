@@ -1,6 +1,7 @@
 'use strict'
 
 const gl = require('mapbox-gl')
+const fetch = require('fetch')
 
 gl.accessToken = 'pk.eyJ1IjoiZ3JlZndkYSIsImEiOiJjaXBxeDhxYm8wMDc0aTZucG94d29zdnRyIn0.oKynfvvLSuyxT3PglBMF4w'
 const map = new gl.Map({
@@ -14,75 +15,71 @@ map.addControl(new gl.NavigationControl(), 'top-left')
 
 const el = document.getElementById('map')
 
-var x = 13.5, y = 52.5, pm = 10, toxicity = 0
+var path = null, featureCollection = null
 
-var path = {
+var featureCollection = {
 	"type": "FeatureCollection",
-	"features": [
-		{
-			"type": "Feature",
-			"geometry": {
-				"type": "Point",
-				"coordinates": [x, y]
-			},
-			"properties": {
-				"pm": pm,
-				"toxicity": 0
-			},
-		},
-	]
+	"features": []
 }
 
 map.on('load', function() {
 
-	map.addSource('path', {
-		"type": "geojson",
-		"data": path
-	})
-
-	map.addLayer({
-		"id": "path",
-		"source": "path",
-		"type": "circle",
-		"paint": {
-			"circle-color": {
-				"property": "toxicity",
-				"type": "categorical",
-				"stops": [
-					[0, "blue"],
-					[1, "yellow"],
-					[2, "red"],
-				]
-			},
-			"circle-blur": 1,
-			"circle-radius": {
-				"property": "pm",
-				"type": "identity"
-			}
-		}
-	})
-
 	const animate = function() {
-		x = x + (Math.random() - 0.2) * 0.00005
-		y = y + (Math.random() - 0.2) * 0.00005
-		pm = pm + (Math.random() - 0.5) * 3
-		toxicity = Math.round(Math.random() * 3)
-
-		path.features.push({
-			"type": "Feature",
-			"geometry": {
-				"type": "Point",
-				"coordinates": [x, y]
-			},
-			"properties": {
-				"pm": pm,
-				"toxicity": toxicity
-			}
-		})
-
-		map.getSource('path').setData(path)
+		pushFeature()
+		map.getSource('path').setData(featureCollection)
 		requestAnimationFrame(animate)
 	}
 
-	animate()
+	var pathIndex = 0
+	var toxicity = 0
+
+	const pushFeature = function() {
+		if (pathIndex >= path.length) return
+		var entry = path[pathIndex]
+		featureCollection.features.push({
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [entry.longitude, entry.latitude]
+			},
+			"properties": {
+				"toxicity": toxicity
+			}
+		})
+		pathIndex++
+		toxicity = Math.round(Math.random() * 2)
+	}
+
+	fetch.fetchUrl(window.location.origin + '/path.json', (error, meta, body) => {
+		path = JSON.parse(body.toString())
+		console.log('loaded path', path.length)
+
+		pushFeature()
+
+		map.addSource('path', {
+			"type": "geojson",
+			"data": featureCollection,
+		})
+
+		map.addLayer({
+			"id": "path",
+			"source": "path",
+			"type": "circle",
+			"paint": {
+				"circle-color": {
+					"property": "toxicity",
+					"type": "categorical",
+					"stops": [
+						[0, "blue"],
+						[1, "yellow"],
+						[2, "red"],
+					]
+				},
+				"circle-blur": 1,
+				"circle-radius": 12
+			}
+		})
+
+		animate()
+	})
 })
