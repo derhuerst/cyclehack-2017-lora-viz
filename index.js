@@ -28,7 +28,8 @@ const buildMeasurementPoint = (measurement) => {
 			]
 		},
 		properties: {
-			"toxicity": Math.round(Math.random() * 2)
+			pm10: measurement.pm10,
+			pm25: measurement.pm25
 		}
 	}
 }
@@ -85,13 +86,9 @@ map.on('load', function() {
 			"type": "circle",
 			"paint": {
 				"circle-color": {
-					"property": "toxicity",
-					"type": "categorical",
-					"stops": [
-						[0, "white"],
-						[1, "blue"],
-						[2, "red"],
-					]
+					"property": "pm10", // todo: what about pm25?
+					"type": "exponential",
+					"stops": pm10Palette
 				},
 				"circle-blur": 1,
 				"circle-radius": 12
