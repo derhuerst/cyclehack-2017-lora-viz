@@ -22,25 +22,40 @@ var featureCollection = {
 	"features": []
 }
 
+const speedup = 10
+
 map.on('load', function() {
+	var startAnimateTime = null
+
+	const startAnimate = function() {
+		startAnimateTime = new Date()
+		animate()
+	}
 
 	const animate = function() {
-		pushFeature()
-		map.getSource('path').setData(featureCollection)
+		var elapsed = (new Date() - startAnimateTime) / 1000 * speedup,
+			animated = currentEntry().timestamp - path[0].timestamp
+		if (elapsed > animated) {
+			pushFeature()
+			map.getSource('path').setData(featureCollection)
+		}
 		requestAnimationFrame(animate)
 	}
 
 	var pathIndex = 0
 	var toxicity = 0
 
+	const currentEntry = function() {
+		return path[pathIndex]
+	}
+
 	const pushFeature = function() {
 		if (pathIndex >= path.length) return
-		var entry = path[pathIndex]
 		featureCollection.features.push({
 			"type": "Feature",
 			"geometry": {
 				"type": "Point",
-				"coordinates": [entry.longitude, entry.latitude]
+				"coordinates": [currentEntry().longitude, currentEntry().latitude]
 			},
 			"properties": {
 				"toxicity": toxicity
@@ -80,6 +95,6 @@ map.on('load', function() {
 			}
 		})
 
-		animate()
+		startAnimate()
 	})
 })
