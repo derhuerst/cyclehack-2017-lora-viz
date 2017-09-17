@@ -49,7 +49,8 @@ const createAnimation = (measurements, featureCollection) => {
 		map.getSource('measurements').setData(featureCollection)
 		map.fitBounds(bbox(featureCollection), {
 			maxZoom: 15,
-			padding: 50
+			padding: 50,
+			linear: true
 		})
 	}
 
