@@ -107,9 +107,7 @@ map.on('load', function() {
 			}
 		})
 
-		createAnimation(measurements.filter((measure) => {
-			return measure.timestamp > 1505646840
-		}), featureCollection)
+		createAnimation(measurements, featureCollection)
 	})
 	.catch(console.error)
 })
