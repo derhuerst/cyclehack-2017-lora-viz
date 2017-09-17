@@ -13,3 +13,5 @@ deploy:
   on:
     node: stable
     branch: master
+before_deploy:
+  - sed -i '/bundle.min.js/d' .gitignore
