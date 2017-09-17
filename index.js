@@ -70,8 +70,8 @@ map.on('load', function() {
 					"property": "toxicity",
 					"type": "categorical",
 					"stops": [
-						[0, "blue"],
-						[1, "yellow"],
+						[0, "white"],
+						[1, "blue"],
 						[2, "red"],
 					]
 				},
