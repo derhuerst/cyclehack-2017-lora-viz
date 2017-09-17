@@ -1,7 +1,7 @@
 'use strict'
 
 const gl = require('mapbox-gl')
-const fetch = require('fetch')
+const {fetch} = require('fetch-ponyfill')()
 
 gl.accessToken = 'pk.eyJ1IjoiZ3JlZndkYSIsImEiOiJjaXBxeDhxYm8wMDc0aTZucG94d29zdnRyIn0.oKynfvvLSuyxT3PglBMF4w'
 const map = new gl.Map({
@@ -15,70 +15,73 @@ map.addControl(new gl.NavigationControl(), 'top-left')
 
 const el = document.getElementById('map')
 
-var path = null, featureCollection = null
-
-var featureCollection = {
-	"type": "FeatureCollection",
-	"features": []
-}
-
 const speedup = 10
 
-map.on('load', function() {
-	var startAnimateTime = null
+const buildMeasurementPoint = (measurement) => {
+	return {
+		type: "Feature",
+		geometry: {
+			type: "Point",
+			coordinates: [
+				measurement.longitude + Math.random() * .1,
+				measurement.latitude + Math.random() * .1
+			]
+		},
+		properties: {
+			"toxicity": Math.round(Math.random() * 2)
+		}
+	}
+}
 
-	const startAnimate = function() {
-		startAnimateTime = new Date()
-		animate()
+const createAnimation = (measurements, featureCollection) => {
+	const startAnimateTime = Date.now()
+	let measurementsI = 0
+
+	const render = () => {
+		map.getSource('measurements').setData(featureCollection)
 	}
 
 	const animate = function() {
-		var elapsed = (new Date() - startAnimateTime) / 1000 * speedup,
-			animated = currentEntry().timestamp - path[0].timestamp
-		if (elapsed > animated) {
-			pushFeature()
-			map.getSource('path').setData(featureCollection)
+		const elapsed = (Date.now() - startAnimateTime) / 1000 * speedup
+		const measurement = measurements[measurementsI]
+		const threshold = measurement.timestamp - measurements[0].timestamp
+		if (elapsed > threshold) {
+			measurementsI++
+
+			const point = buildMeasurementPoint(measurements[measurementsI])
+			featureCollection.features.push(point)
+			render()
 		}
+
 		requestAnimationFrame(animate)
 	}
 
-	var pathIndex = 0
-	var toxicity = 0
+	requestAnimationFrame(animate)
+}
 
-	const currentEntry = function() {
-		return path[pathIndex]
-	}
-
-	const pushFeature = function() {
-		if (pathIndex >= path.length) return
-		featureCollection.features.push({
-			"type": "Feature",
-			"geometry": {
-				"type": "Point",
-				"coordinates": [currentEntry().longitude, currentEntry().latitude]
-			},
-			"properties": {
-				"toxicity": toxicity
-			}
-		})
-		pathIndex++
-		toxicity = Math.round(Math.random() * 2)
-	}
-
-	fetch.fetchUrl(window.location.origin + '/path.json', (error, meta, body) => {
-		path = JSON.parse(body.toString())
-		console.log('loaded path', path.length)
-
-		pushFeature()
-
-		map.addSource('path', {
-			"type": "geojson",
-			"data": featureCollection,
+map.on('load', function() {
+	fetch('https://cyclehack-2017-lora-backend.jannisr.de/measurements')
+	.then((res) => {
+		if (!res.ok) {
+			const err = new Error(res.statusText)
+			err.statusCode = res.status
+			throw err
+		}
+		return res.json()
+	})
+	.then((measurements) => {
+		const featureCollection = {
+			type: "FeatureCollection",
+			features: []
+		}
+		map.addSource('measurements', {
+			type: "geojson",
+			data: featureCollection,
 		})
 
 		map.addLayer({
 			"id": "path",
-			"source": "path",
+			"source": "measurements",
 			"type": "circle",
 			"paint": {
 				"circle-color": {
@@ -95,6 +98,7 @@ map.on('load', function() {
 			}
 		})
 
-		startAnimate()
+		createAnimation(measurements, featureCollection)
 	})
+	.catch(console.error)
 })
