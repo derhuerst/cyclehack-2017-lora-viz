@@ -2,6 +2,7 @@
 
 const gl = require('mapbox-gl')
 const {fetch} = require('fetch-ponyfill')()
+const bbox = require('@turf/bbox')
 
 gl.accessToken = 'pk.eyJ1IjoiZ3JlZndkYSIsImEiOiJjaXBxeDhxYm8wMDc0aTZucG94d29zdnRyIn0.oKynfvvLSuyxT3PglBMF4w'
 const map = new gl.Map({
@@ -15,7 +16,13 @@ map.addControl(new gl.NavigationControl(), 'top-left')
 
 const el = document.getElementById('map')
 
-const speedup = 10
+const pm10Palette = [
+	[0, '#4990e2'],
+	[100, '#f8e81c'],
+	[300, '#d0011b']
+]
+
+const speedup = 50
 
 const buildMeasurementPoint = (measurement) => {
 	return {
@@ -23,8 +30,8 @@ const buildMeasurementPoint = (measurement) => {
 		geometry: {
 			type: "Point",
 			coordinates: [
-				measurement.longitude + Math.random() * .1,
-				measurement.latitude + Math.random() * .1
+				measurement.longitude,
+				measurement.latitude
 			]
 		},
 		properties: {
@@ -40,6 +47,10 @@ const createAnimation = (measurements, featureCollection) => {
 
 	const render = () => {
 		map.getSource('measurements').setData(featureCollection)
+		map.fitBounds(bbox(featureCollection), {
+			maxZoom: 15,
+			padding: 50
+		})
 	}
 
 	const animate = function() {
