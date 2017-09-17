@@ -22,15 +22,13 @@
 	},
 	"scripts": {
 		"start": "watchify -t [ babelify --presets env ] index.js -o bundle.min.js",
-		"bundle": "env NODE_ENV=production browserify -t [ babelify --presets env ] index.js > bundle.js",
-		"minify": "uglifyjs -mc --screw-ie8 -- bundle.js > bundle.min.js",
-		"build": "npm run bundle && npm run minify"
+		"build": "env NODE_ENV=production browserify -t [ babelify --presets env ] -g uglifyify index.js > bundle.min.js"
 	},
 	"devDependencies": {
 		"babel-preset-env": "^1.6.0",
 		"babelify": "^7.3.0",
 		"browserify": "^14.4.0",
-		"uglify-es": "^3.1.0",
+		"uglifyify": "^4.0.3",
 		"watchify": "^3.9.0"
 	}
 }

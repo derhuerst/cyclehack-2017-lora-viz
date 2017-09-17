@@ -3,7 +3,7 @@ language: node_js
 node_js:
   - 'stable'
 script:
-  - npm run bundle # todo
+  - npm run build
 after_script:
   - ls -lh
 deploy:
