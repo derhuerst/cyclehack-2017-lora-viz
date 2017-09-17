@@ -3,6 +3,7 @@
 const gl = require('mapbox-gl')
 const {fetch} = require('fetch-ponyfill')()
 const bbox = require('@turf/bbox')
+const fecha = require('fecha')
 
 gl.accessToken = 'pk.eyJ1IjoiZ3JlZndkYSIsImEiOiJjaXBxeDhxYm8wMDc0aTZucG94d29zdnRyIn0.oKynfvvLSuyxT3PglBMF4w'
 const map = new gl.Map({
@@ -35,38 +36,51 @@ const buildMeasurementPoint = (measurement) => {
 			]
 		},
 		properties: {
+			timestamp: measurement.timestamp,
 			pm10: measurement.pm10,
 			pm25: measurement.pm25
 		}
 	}
 }
 
-const createAnimation = (measurements, featureCollection) => {
-	const startAnimateTime = Date.now()
-	let measurementsI = 0
+const setupSlider = (measurements) => {
+	const slider = document.getElementById('slider')
+	const timeLabel = document.getElementById('time-label')
+	slider.max = measurements[measurements.length-1].timestamp
+	slider.min = measurements[0].timestamp
 
-	const render = () => {
-		map.getSource('measurements').setData(featureCollection)
-		map.fitBounds(bbox(featureCollection), {
-			maxZoom: 15,
-			padding: 50,
-			linear: true
-		})
-	}
+	slider.addEventListener('input', function(e) {
+		var timestamp = parseInt(e.target.value, 10)
+		timeLabel.innerHTML = fecha.format(new Date(timestamp * 1000), 'DD.MM.YYYY HH:mm:ss')
+		map.setFilter('path', ['<', 'timestamp', timestamp])
+	})
+	return slider
+}
+
+const createAnimation = (measurements, featureCollection, slider) => {
+	const startAnimateTime = Date.now()
+
+	measurements.forEach((measurement) => {
+		featureCollection.features.push(buildMeasurementPoint(measurement))
+	})
+
+	map.getSource('measurements').setData(featureCollection)
+	map.fitBounds(bbox(featureCollection), {
+		maxZoom: 15,
+		padding: 50,
+		linear: true
+	})
 
 	const animate = function() {
-		const elapsed = (Date.now() - startAnimateTime) / 1000 * speedup
-		const measurement = measurements[measurementsI]
-		const threshold = measurement.timestamp - measurements[0].timestamp
-		if (elapsed > threshold) {
-			measurementsI++
-
-			const point = buildMeasurementPoint(measurements[measurementsI])
-			featureCollection.features.push(point)
-			render()
-		}
-
-		requestAnimationFrame(animate)
+		setTimeout(() => {
+			const elapsed = (Date.now() - startAnimateTime) / 1000 * speedup
+			const threshold = slider.value - slider.min
+			if (elapsed > threshold) {
+				slider.value = parseInt(slider.value) + 1
+				slider.dispatchEvent(new InputEvent('input', { target: slider }))
+			}
+			if (slider.value < slider.max) requestAnimationFrame(animate)
+		}, 100)
 	}
 
 	requestAnimationFrame(animate)
@@ -107,7 +121,7 @@ map.on('load', function() {
 			}
 		})
 
-		createAnimation(measurements, featureCollection)
+		createAnimation(measurements, featureCollection, setupSlider(measurements))
 	})
 	.catch(console.error)
 })
