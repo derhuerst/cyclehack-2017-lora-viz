@@ -1,0 +1,17 @@
+sudo: false
+language: node_js
+node_js:
+  - 'stable'
+script:
+  - npm run build
+after_script:
+  - ls -lh
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  on:
+    node: stable
+    branch: master
+before_deploy:
+  - sed -i '/bundle.min.js/d' .gitignore

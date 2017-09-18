@@ -1,0 +1,43 @@
+{
+	"private": true,
+	"name": "cyclehack-2017-lora-viz",
+	"description": "Showing realtime fine dust data collected by a mobile sensor.",
+	"version": "0.1.0",
+	"main": "index.js",
+	"keywords": [
+		"cyclehack",
+		"bicycle",
+		"cycling",
+		"bike",
+		"fine dust",
+		"pm10",
+		"pm25",
+		"lora",
+		"lorawan"
+	],
+	"author": "Jannis R <mail@jannisr.de>",
+	"homepage": "https://github.com/derhuerst/cyclehack-2017-lora-viz",
+	"repository": "derhuerst/cyclehack-2017-lora-viz",
+	"bugs": "https://github.com/derhuerst/cyclehack-2017-lora-viz/issues",
+	"license": "ISC",
+	"engines": {
+		"node": ">=6"
+	},
+	"dependencies": {
+		"@turf/bbox": "^4.7.3",
+		"fecha": "^2.3.1",
+		"fetch-ponyfill": "^4.1.0",
+		"mapbox-gl": "^0.40.0"
+	},
+	"scripts": {
+		"start": "watchify -t [ babelify --presets env ] index.js -o bundle.min.js",
+		"build": "env NODE_ENV=production browserify -t [ babelify --presets env ] -g uglifyify index.js > bundle.min.js"
+	},
+	"devDependencies": {
+		"babel-preset-env": "^1.6.0",
+		"babelify": "^7.3.0",
+		"browserify": "^14.4.0",
+		"uglifyify": "^4.0.3",
+		"watchify": "^3.9.0"
+	}
+}
